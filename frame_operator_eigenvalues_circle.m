@@ -1,5 +1,6 @@
 clear
 clc
+close all
 
 % Circle Graph Laplacian
 A = [0 1; 1 0];
@@ -25,7 +26,7 @@ g_t = @(t) expm(-t*L);
 % Create the analysis operator
 eig_diff_arr = [];
 count = 1;
-for t=0:.1:10
+for t=0:1:10
     g = g_t(t);
     A = [g(1,1)*v1_c; g(1,2)*v2_c; g(2,1)*v1_c; g(2,2)*v2_c];
     S = A*ctranspose(A);
@@ -40,12 +41,15 @@ ylabel('Maximum Eigenvalue Difference')
 title('Eigenvalue Difference of Heat Kernel Frame Operator, N=2')
 
 %% Circle(N)
+clear
+clc
+close all
 
 % Now repeat the above analysis but for circle graphs of varying sizes.
 % Create the graph Laplacian for size N
 
 tol = 1e-12;
-for i=[5,6,7,8,9,10,50]
+for i=[5,6,7,8,9,10]
     s = [];
     t = [];
     for j=1:i
@@ -60,7 +64,9 @@ for i=[5,6,7,8,9,10,50]
     G = graph(s, t);
     L = full(laplacian(G));
     [V1, D1] = eig(L);
+    
     V1_conj = ctranspose(V1);
+    a = 1/sqrt(i)*  ctranspose(dftmtx(i));
     
     g_t = @(t) expm(-t*L);
 
@@ -77,10 +83,11 @@ for i=[5,6,7,8,9,10,50]
             elseif j > i && mod(j, i) ~= 0
                 A(j, :) = g_T(j)*V1_conj(mod(j, i), :);
             elseif j > i && mod(j, i) == 0
-                A(j, :) = g_T(j)*V1_conj(mod(j, i)+1, :);
+                A(j, :) = g_T(j)*V1_conj(mod(j, i)+i, :);
             end
         end
         S = A*ctranspose(A);
+        T = ctranspose(A)*A;
         D = eig(S);
         eig_diff = max(D)-min(D(D>tol));
         eig_diff_arr(count) = eig_diff;
@@ -95,6 +102,13 @@ for i=[5,6,7,8,9,10,50]
     hold on
 end
 
+%% Outer-Product Formulation
 
+% Make sure that the above frame matrix A is formed correctly. It SHOULD be
+% a multiple of the identity for the circle graph on N vertices
 
+B = zeros(i);
 
+for j=1:i
+    B = B + (norm(g(:,j))^2) * V1(:,j) * V1_conj(j,:);
+end
